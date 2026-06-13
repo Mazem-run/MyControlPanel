@@ -37,7 +37,7 @@ echo -e "${YELLOW}[4/6] Downloading MyControlPanel from GitHub...${NC}"
 INSTALL_DIR="/opt/mycontrolpanel"
 
 # !!! REPLACE THE URL BELOW WITH YOUR ACTUAL GITHUB REPOSITORY URL !!!
-GITHUB_REPO="https://github.com/YourUsername/MyControlPanel.git"
+GITHUB_REPO="https://github.com/Mazem-run/MyControlPanel.git"
 
 if [ -d "$INSTALL_DIR" ]; then
     echo -e "${YELLOW}Directory $INSTALL_DIR already exists. Pulling latest changes...${NC}"

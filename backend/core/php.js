@@ -29,7 +29,8 @@ async function installPHP() {
         }
 
         console.log('Installing PHP-FPM 8.1 via apt...');
-        exec('apt-get update && apt-get install -y php8.1-fpm php8.1-mysql php8.1-curl php8.1-mbstring php8.1-xml', (error, stdout, stderr) => {
+        const cmd = 'apt-get install -y software-properties-common && add-apt-repository ppa:ondrej/php -y && apt-get update && apt-get install -y php8.1-fpm php8.1-mysql php8.1-curl php8.1-mbstring php8.1-xml';
+        exec(cmd, (error, stdout, stderr) => {
             if (error) {
                 console.error(`PHP Installation failed: ${error.message}`);
                 return reject({ success: false, message: 'Installation failed', error: error.message });
