@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Outfit', sans-serif !important;
+    background-color: #0b0f19;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(29, 78, 216, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(124, 58, 237, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+    background-attachment: fixed;
+    color: #e2e8f0;
+    min-height: 100vh;
+}
+
+.glass-panel {
+    background: rgba(17, 24, 39, 0.6) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+    border-radius: 16px !important;
+}
+
+.ant-layout {
+    background: transparent !important;
+}
+
+.ant-layout-sider {
+    background: rgba(11, 15, 25, 0.7) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.ant-layout-header {
+    background: rgba(11, 15, 25, 0.5) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.ant-menu {
+    background: transparent !important;
+}
+
+.ant-menu-item {
+    border-radius: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+.ant-menu-item-selected {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0) 100%) !important;
+    border-left: 3px solid #3b82f6 !important;
+    border-radius: 0 8px 8px 0 !important;
+}
+
+.ant-card {
+    background: rgba(17, 24, 39, 0.5) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+.ant-card-head {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #f8fafc !important;
+    font-weight: 600 !important;
+    font-size: 1.1rem !important;
+}
+
+.ant-input, .ant-input-password, .ant-input-affix-wrapper {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: #f8fafc !important;
+    transition: all 0.3s ease;
+}
+
+.ant-input::placeholder {
+    color: #64748b !important;
+}
+
+.ant-input:focus, .ant-input-affix-wrapper-focused {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.btn-gradient {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%) !important;
+    border: none !important;
+    color: white !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6) !important;
+    opacity: 0.9;
+}
+
+.btn-success-gradient {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    border: none !important;
+    color: white !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-success-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5) !important;
+}
+
+.ant-list-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.ant-alert {
+    background: rgba(17, 24, 39, 0.6) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+}
+
+.ant-alert-success {
+    border-left: 4px solid #10b981 !important;
+}
+
+.ant-alert-warning {
+    border-left: 4px solid #f59e0b !important;
+}
+
+.ant-typography {
+    font-family: 'Outfit', sans-serif !important;
+}
