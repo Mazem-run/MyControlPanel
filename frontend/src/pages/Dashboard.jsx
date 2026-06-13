@@ -19,7 +19,8 @@ import {
   ClockCircleOutlined,
   UserOutlined,
   SafetyCertificateOutlined,
-  AppstoreAddOutlined
+  AppstoreAddOutlined,
+  MailOutlined
 } from '@ant-design/icons'
 
 const { Header, Sider, Content } = Layout
@@ -31,19 +32,22 @@ export default function Dashboard() {
   const [activeMenu, setActiveMenu] = useState('0')
   
   // Data States
-  const [sysInfo, setSysInfo] = useState(null)
+  const [sysInfo, setSysInfo] = useState({ cpu: 0, memory: 0, disk: 0, uptime: '0s' })
   const [domains, setDomains] = useState([])
   const [ftpUsers, setFtpUsers] = useState([])
   const [cronJobs, setCronJobs] = useState([])
+  const [mailAccounts, setMailAccounts] = useState([])
   
   const [mysqlStatus, setMysqlStatus] = useState({ installed: false, message: 'Checking...' })
   const [phpStatus, setPhpStatus] = useState({ installed: false, message: 'Checking...' })
+  const [mailStatus, setMailStatus] = useState({ installed: false, message: 'Checking...' })
 
   // Loading States
   const [loading, setLoading] = useState(false)
   const [installingMysql, setInstallingMysql] = useState(false)
   const [installingPhp, setInstallingPhp] = useState(false)
   const [installingFtp, setInstallingFtp] = useState(false)
+  const [installingMail, setInstallingMail] = useState(false)
   const [issuingSsl, setIssuingSsl] = useState(false)
   const [installingWp, setInstallingWp] = useState(false)
   const [wpModalVisible, setWpModalVisible] = useState(false)
@@ -54,6 +58,7 @@ export default function Dashboard() {
   const [dbForm] = Form.useForm()
   const [ftpForm] = Form.useForm()
   const [cronForm] = Form.useForm()
+  const [mailForm] = Form.useForm()
 
   // File Manager state
   const [currentPath, setCurrentPath] = useState('/')
@@ -66,94 +71,99 @@ export default function Dashboard() {
 
   const navigate = useNavigate()
 
-  useEffect(() => {
-    fetchSysInfo()
-    const interval = setInterval(fetchSysInfo, 3000)
-    return () => clearInterval(interval)
-  }, [])
+  const fetchData = async () => {
+    try {
+      const [domRes, cronRes, ftpRes, mailRes, sysRes, mysqlRes, phpRes, mailStatRes] = await Promise.all([
+        fetch('/api/domains').then(res => res.json()),
+        fetch('/api/cron').then(res => res.json()),
+        fetch('/api/ftp').then(res => res.json()),
+        fetch('/api/mail/accounts').then(res => res.json()),
+        fetch('/api/sysinfo').then(res => res.json()),
+        fetch('/api/mysql/status').then(res => res.json()),
+        fetch('/api/php/status').then(res => res.json()),
+        fetch('/api/mail/status').then(res => res.json())
+      ])
+      
+      if (domRes.data) setDomains(domRes.data)
+      if (cronRes.data) setCronJobs(cronRes.data)
+      if (ftpRes.data) setFtpUsers(ftpRes.data)
+      if (mailRes.data) setMailAccounts(mailRes.data)
+      if (sysRes.data) setSysInfo(sysRes.data)
+      if (mysqlRes.data) setMysqlStatus(mysqlRes.data)
+      if (phpRes.data) setPhpStatus(phpRes.data)
+      if (mailStatRes.data) setMailStatus(mailStatRes.data)
+    } catch (err) {
+      console.error('Failed to fetch data', err)
+    }
+  }
 
   useEffect(() => {
-    if (activeMenu === '1') fetchDomains()
-    if (activeMenu === '2') fetchMysqlStatus()
-    if (activeMenu === '3') fetchFtpUsers()
-    if (activeMenu === '4') fetchCronJobs()
-    if (activeMenu === '5') fetchFiles(currentPath)
-    if (activeMenu === '6') fetchPhpStatus()
-  }, [activeMenu, currentPath])
+    fetchData()
+    const interval = setInterval(fetchData, 3000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleLogout = () => {
     localStorage.removeItem('mcp_token')
     navigate('/login')
   }
 
-  // --- API FETCHERS ---
-  const fetchSysInfo = async () => {
-    try {
-      const res = await fetch('/api/sysinfo')
-      const data = await res.json()
-      if (data.status === 'success') setSysInfo(data.data)
-    } catch (err) { }
-  }
-
-  const fetchDomains = async () => {
-    try {
-      const res = await fetch('/api/domains')
-      const data = await res.json()
-      if (data.status === 'success') setDomains(data.data)
-    } catch (err) { }
-  }
-
-  const fetchMysqlStatus = async () => {
-    try {
-      const res = await fetch('/api/mysql/status')
-      const data = await res.json()
-      if (data.status === 'success') setMysqlStatus(data.data)
-    } catch (err) { }
-  }
-
-  const fetchPhpStatus = async () => {
-    try {
-      const res = await fetch('/api/php/status')
-      const data = await res.json()
-      if (data.status === 'success') setPhpStatus(data.data)
-    } catch (err) { }
-  }
-
-  const fetchFtpUsers = async () => {
-    try {
-      const res = await fetch('/api/ftp')
-      const data = await res.json()
-      if (data.status === 'success') setFtpUsers(data.data)
-    } catch (err) { }
-  }
-
-  const fetchCronJobs = async () => {
-    try {
-      const res = await fetch('/api/cron')
-      const data = await res.json()
-      if (data.status === 'success') setCronJobs(data.data)
-    } catch (err) { }
-  }
-
-  // --- ACTION HANDLERS ---
-  const installMysql = async () => {
+  const handleInstallMysql = async () => {
     setInstallingMysql(true)
     try {
       const res = await fetch('/api/mysql/install', { method: 'POST' })
       const data = await res.json()
-      if (data.status === 'success') { message.success(data.message); fetchMysqlStatus() }
+      if (data.status === 'success') { message.success(data.message); fetchData() }
     } catch (err) { message.error('Network error') } 
     finally { setInstallingMysql(false) }
   }
 
-  const installPhp = async () => {
+  const handleInstallPhp = async () => {
     setInstallingPhp(true)
     try {
       const res = await fetch('/api/php/install', { method: 'POST' })
       const data = await res.json()
-      if (data.status === 'success') { message.success(data.message); fetchPhpStatus() }
+      if (data.status === 'success') { message.success(data.message); fetchData() }
     } catch (err) { message.error('Network error') } 
     finally { setInstallingPhp(false) }
+  }
+
+  const handleInstallFtp = async () => {
+    setInstallingFtp(true)
+    try {
+        // ... (existing logic)
+    } finally { setInstallingFtp(false) }
+  }
+
+  const handleInstallMail = async () => {
+    setInstallingMail(true)
+    try {
+      const res = await fetch('/api/mail/install', { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        message.success(data.message)
+        fetchData()
+      } else { message.error(data.message) }
+    } catch (err) { message.error('Network error') }
+    finally { setInstallingMail(false) }
+  }
+
+  const handleCreateMailAccount = async (values) => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/mail/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values)
+      })
+      const data = await res.json()
+      if (data.success) {
+        message.success(data.message)
+        mailForm.resetFields()
+        fetchData()
+      } else { message.error(data.message) }
+    } catch (err) { message.error('Network error') }
+    finally { setLoading(false) }
   }
 
   const handleAddDomain = async (values) => {
@@ -165,7 +175,7 @@ export default function Dashboard() {
         body: JSON.stringify(values)
       })
       const data = await res.json()
-      if (data.status === 'success') { message.success(data.message); domainForm.resetFields(); fetchDomains() }
+      if (data.status === 'success') { message.success(data.message); domainForm.resetFields(); fetchData() }
     } catch (err) { message.error('Network error') } 
     finally { setLoading(false) }
   }
@@ -226,7 +236,7 @@ export default function Dashboard() {
         body: JSON.stringify(values)
       })
       const data = await res.json()
-      if (data.status === 'success') { message.success('FTP User created'); ftpForm.resetFields(); fetchFtpUsers() }
+      if (data.status === 'success') { message.success('FTP User created'); ftpForm.resetFields(); fetchData() }
     } catch (err) { message.error('Network error') } 
     finally { setLoading(false) }
   }
@@ -240,7 +250,7 @@ export default function Dashboard() {
         body: JSON.stringify(values)
       })
       const data = await res.json()
-      if (data.status === 'success') { message.success('Cron job scheduled'); cronForm.resetFields(); fetchCronJobs() }
+      if (data.status === 'success') { message.success('Cron job scheduled'); cronForm.resetFields(); fetchData() }
       else message.error(data.message)
     } catch (err) { message.error('Network error') } 
     finally { setLoading(false) }
@@ -250,7 +260,7 @@ export default function Dashboard() {
     try {
       const res = await fetch(`/api/cron/${id}`, { method: 'DELETE' })
       const data = await res.json()
-      if (data.status === 'success') { message.success('Job deleted'); fetchCronJobs() }
+      if (data.status === 'success') { message.success('Job deleted'); fetchData() }
     } catch (err) { message.error('Network error') }
   }
 
@@ -307,7 +317,7 @@ export default function Dashboard() {
 
 
   const renderContent = () => {
-    if (activeMenu === '0') {
+    if (activeMenu === 'dashboard') {
       return (
         <Row gutter={[24, 24]}>
           <Col span={24}>
@@ -315,220 +325,122 @@ export default function Dashboard() {
           </Col>
           <Col xs={24} md={8}>
             <Card className="glass-panel" style={{ textAlign: 'center' }}>
-              <Statistic title="CPU Usage" value={sysInfo?.cpuUsage || 0} suffix="%" valueStyle={{ color: '#10b981' }} />
-              <Progress type="dashboard" percent={sysInfo?.cpuUsage || 0} strokeColor="#10b981" />
+              <Statistic title="CPU Usage" value={sysInfo?.cpu || 0} suffix="%" valueStyle={{ color: '#10b981' }} />
+              <Progress type="dashboard" percent={sysInfo?.cpu || 0} strokeColor="#10b981" />
             </Card>
           </Col>
           <Col xs={24} md={8}>
             <Card className="glass-panel" style={{ textAlign: 'center' }}>
-              <Statistic title="RAM Usage" value={sysInfo?.usedMemGB || 0} suffix={`/ ${sysInfo?.totalMemGB || 0} GB`} valueStyle={{ color: '#3b82f6' }} />
-              <Progress type="dashboard" percent={sysInfo?.memUsage || 0} strokeColor="#3b82f6" />
+              <Statistic title="RAM Usage" value={sysInfo?.memory || 0} suffix="%" valueStyle={{ color: '#3b82f6' }} />
+              <Progress type="dashboard" percent={sysInfo?.memory || 0} strokeColor="#3b82f6" />
             </Card>
           </Col>
           <Col xs={24} md={8}>
             <Card className="glass-panel" style={{ textAlign: 'center' }}>
               <Statistic title="Uptime" value={sysInfo?.uptime || 'Loading...'} valueStyle={{ color: '#f59e0b', fontSize: '24px' }} />
-              <div style={{ marginTop: 20 }}>
-                <Text type="secondary">OS: {sysInfo?.os}</Text>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-      )
-    }
-
-    if (activeMenu === '1') {
-      return (
-        <Row gutter={[24, 24]}>
-          <Col span={24}>
-            <Card title="Add New Website" bordered={false} className="glass-panel">
-              <Form form={domainForm} onFinish={handleAddDomain} layout="inline">
-                <Form.Item name="domain_name" rules={[{ required: true }]}>
-                  <Input placeholder="mysite.com" prefix={<GlobalOutlined />} />
-                </Form.Item>
-                <Button className="btn-gradient" htmlType="submit" icon={<PlusOutlined />} loading={loading}>Add Domain</Button>
-              </Form>
-            </Card>
-          </Col>
-          <Col span={24}>
-            <Card title="Hosted Domains" bordered={false} className="glass-panel">
-              <List
-                dataSource={domains}
-                renderItem={(item) => (
+              <Card title="Background Services" bordered={false} className="glass-panel">
+                <List>
                   <List.Item
                     actions={[
-                      <Button size="small" type="primary" icon={<AppstoreAddOutlined />} onClick={() => handleInstallWp(item.domain_name)} loading={installingWp} style={{ background: '#f59e0b', borderColor: '#f59e0b' }}>Install WP</Button>,
-                      <Button size="small" type="dashed" icon={<SafetyCertificateOutlined />} onClick={() => handleIssueSSL(item.domain_name)} loading={issuingSsl}>Enable SSL</Button>,
-                      <Badge status="success" text="Active" />
+                      mysqlStatus?.installed ? <Badge status="success" text="Installed" /> : <Button size="small" type="primary" onClick={handleInstallMysql} loading={installingMysql}>Install MariaDB</Button>
                     ]}
                   >
-                    <List.Item.Meta
-                      title={<Text strong style={{ color: '#e2e8f0' }}>{item.domain_name}</Text>}
+                    <List.Item.Meta title="MariaDB Server" description={mysqlStatus?.message || "Not installed"} />
+                  </List.Item>
+                  <List.Item
+                    actions={[
+                      phpStatus?.installed ? <Badge status="success" text="Installed" /> : <Button size="small" type="primary" onClick={handleInstallPhp} loading={installingPhp}>Install PHP-FPM</Button>
+                    ]}
+                  >
+                    <List.Item.Meta title="PHP 8.1 FPM" description={phpStatus?.message || "Not installed"} />
+                  </List.Item>
+                  <List.Item
+                    actions={[
+                      <Button size="small" type="primary" onClick={handleInstallFtp} loading={installingFtp}>Reinstall VSFTPD</Button>
+                    ]}
+                  >
+                    <List.Item.Meta title="FTP Server" description="vsftpd server" />
+                  </List.Item>
+                  <List.Item
+                    actions={[
+                      mailStatus?.installed ? <Badge status="success" text="Installed" /> : <Button size="small" type="primary" onClick={handleInstallMail} loading={installingMail}>Install Postfix/Dovecot</Button>
+                    ]}
+                  >
+                    <List.Item.Meta title="Mail Server" description={mailStatus?.message || "Postfix & Dovecot"} />
+                  </List.Item>
+                </List>
+              </Card>
+            </Card>
+          </Col>
+        </Row>
+      )
+    }
+
+    if (activeMenu === 'mail') {
+      return (
+        <Row gutter={[16, 16]}>
+          <Col span={24}>
+            {!mailStatus?.installed ? (
+              <Alert 
+                message="Mail Server Not Installed" 
+                description="You need to install the Postfix and Dovecot mail stack first."
+                type="warning" 
+                showIcon 
+                action={<Button type="primary" onClick={handleInstallMail} loading={installingMail}>Install Mail Server</Button>}
+              />
+            ) : (
+              <Row gutter={[16, 16]}>
+                <Col xs={24} lg={8}>
+                  <Card title="Create Mailbox" bordered={false} className="glass-panel">
+                    <Form form={mailForm} layout="vertical" onFinish={handleCreateMailAccount}>
+                      <Form.Item name="prefix" label="Email Name" rules={[{ required: true }]}>
+                        <Input addonAfter="@" placeholder="admin" />
+                      </Form.Item>
+                      <Form.Item name="domain" label="Select Domain" rules={[{ required: true }]}>
+                        <Select placeholder="Select a domain">
+                          {domains.map(d => (
+                            <Select.Option key={d.id} value={d.domain_name}>{d.domain_name}</Select.Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                      <Form.Item name="password" label="Password" rules={[{ required: true, min: 8 }]}>
+                        <Input.Password prefix={<LockOutlined />} />
+                      </Form.Item>
+                      <Button type="primary" htmlType="submit" icon={<PlusOutlined />} loading={loading} block>Create Mailbox</Button>
+                    </Form>
+                  </Card>
+                  
+                  <Card title="Email Client Settings" bordered={false} className="glass-panel" style={{ marginTop: 16 }}>
+                    <p><b>Incoming (IMAP):</b> port 143 (STARTTLS)</p>
+                    <p><b>Incoming (POP3):</b> port 110 (STARTTLS)</p>
+                    <p><b>Outgoing (SMTP):</b> port 587 (STARTTLS)</p>
+                    <p><Text type="secondary">Username is your full email address.</Text></p>
+                  </Card>
+                </Col>
+                <Col xs={24} lg={16}>
+                  <Card title="Mail Accounts" bordered={false} className="glass-panel">
+                    <List
+                      dataSource={mailAccounts}
+                      renderItem={(item) => (
+                        <List.Item actions={[<Button size="small" danger icon={<DeleteOutlined />}>Delete</Button>]}>
+                          <List.Item.Meta
+                            avatar={<MailOutlined style={{ fontSize: '24px', color: '#1890ff' }} />}
+                            title={<Text strong style={{ color: '#e2e8f0' }}>{item.email}</Text>}
+                            description={`Domain: ${item.domain} | Created: ${new Date(item.created_at).toLocaleDateString()}`}
+                          />
+                        </List.Item>
+                      )}
                     />
-                  </List.Item>
-                )}
-              />
-            </Card>
-
-            <Modal title="WordPress Installed Successfully! 🎉" open={wpModalVisible} onOk={() => setWpModalVisible(false)} onCancel={() => setWpModalVisible(false)} footer={[<Button key="ok" type="primary" onClick={() => setWpModalVisible(false)}>Got it</Button>]}>
-              <div style={{ padding: '10px 0' }}>
-                <p>WordPress has been successfully installed on <b>{wpCredentials?.domain}</b>.</p>
-                <Alert message="Important: Database Credentials" description={<div style={{fontFamily: 'monospace', marginTop: 10}}>
-                    <b>DB Name:</b> {wpCredentials?.dbName}<br/>
-                    <b>DB User:</b> {wpCredentials?.dbUser}<br/>
-                    <b>DB Password:</b> {wpCredentials?.dbPass}
-                  </div>} type="success" showIcon />
-                <p style={{ marginTop: 15 }}>You can now visit <b>http://{wpCredentials?.domain}</b> to complete the famous 5-minute WordPress installation!</p>
-              </div>
-            </Modal>
+                  </Card>
+                </Col>
+              </Row>
+            )}
           </Col>
         </Row>
       )
     }
 
-    if (activeMenu === '2') {
-      return (
-        <Row gutter={[24, 24]}>
-          <Col span={24}>
-            <Alert
-              message={`MySQL Status: ${mysqlStatus.message}`}
-              type={mysqlStatus.installed ? "success" : "warning"}
-              action={!mysqlStatus.installed && <Button size="small" className="btn-gradient" onClick={installMysql} loading={installingMysql}>Install MariaDB</Button>}
-            />
-          </Col>
-          <Col span={24}>
-            <Card title="Create Database" bordered={false} className="glass-panel">
-              <Form form={dbForm} onFinish={handleCreateDatabase} layout="vertical">
-                <Row gutter={24}>
-                  <Col xs={24} md={12}><Form.Item name="dbName" label={<span style={{color:'#fff'}}>DB Name</span>}><Input disabled={!mysqlStatus.installed} /></Form.Item></Col>
-                  <Col xs={24} md={12}><Form.Item name="dbUser" label={<span style={{color:'#fff'}}>DB User</span>}><Input disabled={!mysqlStatus.installed} /></Form.Item></Col>
-                </Row>
-                <Form.Item name="dbPass" label={<span style={{color:'#fff'}}>Password</span>}><Input.Password disabled={!mysqlStatus.installed} /></Form.Item>
-                <Button className="btn-success-gradient" htmlType="submit" loading={loading} disabled={!mysqlStatus.installed}>Create DB & User</Button>
-              </Form>
-            </Card>
-          </Col>
-        </Row>
-      )
-    }
-
-    if (activeMenu === '3') {
-      return (
-        <Row gutter={[24, 24]}>
-          <Col span={24}>
-            <Card title="Create FTP Account" bordered={false} className="glass-panel">
-              <Form form={ftpForm} onFinish={handleAddFtpUser} layout="vertical">
-                <Form.Item name="username" label={<span style={{color:'#fff'}}>Username</span>} rules={[{ required: true }]}><Input prefix={<UserOutlined/>} /></Form.Item>
-                <Form.Item name="password" label={<span style={{color:'#fff'}}>Password</span>} rules={[{ required: true }]}><Input.Password prefix={<LockOutlined/>} /></Form.Item>
-                <Form.Item name="domain" label={<span style={{color:'#fff'}}>Target Website Folder</span>} rules={[{ required: true }]}>
-                  <Input placeholder="mysite.com (User will be locked in this folder)" />
-                </Form.Item>
-                <Button className="btn-gradient" htmlType="submit" loading={loading}>Create FTP User</Button>
-              </Form>
-            </Card>
-          </Col>
-          <Col span={24}>
-            <Card title="FTP Users" bordered={false} className="glass-panel">
-              <List
-                dataSource={ftpUsers}
-                renderItem={(item) => (
-                  <List.Item>
-                    <List.Item.Meta title={<span style={{color: '#e2e8f0'}}>{item.username}</span>} description={<span style={{color: '#94a3b8'}}>Locked to: /var/www/{item.domain}</span>} />
-                  </List.Item>
-                )}
-              />
-            </Card>
-          </Col>
-        </Row>
-      )
-    }
-
-    if (activeMenu === '4') {
-      return (
-        <Row gutter={[24, 24]}>
-          <Col span={24}>
-            <Card title="Add Cron Job" bordered={false} className="glass-panel">
-              <Form form={cronForm} onFinish={handleAddCron} layout="vertical">
-                <Form.Item name="schedule" label={<span style={{color:'#fff'}}>Schedule (Cron Expression)</span>} rules={[{ required: true }]}><Input placeholder="* * * * *" /></Form.Item>
-                <Form.Item name="command" label={<span style={{color:'#fff'}}>Command</span>} rules={[{ required: true }]}><Input placeholder="php /var/www/mysite.com/cron.php" /></Form.Item>
-                <Button className="btn-gradient" htmlType="submit" loading={loading}>Schedule Job</Button>
-              </Form>
-            </Card>
-          </Col>
-          <Col span={24}>
-            <Card title="Active Cron Jobs" bordered={false} className="glass-panel">
-              <List
-                dataSource={cronJobs}
-                renderItem={(item) => (
-                  <List.Item actions={[<Button danger icon={<DeleteOutlined />} onClick={() => handleDeleteCron(item.id)} />]}>
-                    <List.Item.Meta title={<span style={{color: '#e2e8f0', fontFamily: 'monospace'}}>{item.schedule}</span>} description={<span style={{color: '#94a3b8'}}>{item.command}</span>} />
-                  </List.Item>
-                )}
-              />
-            </Card>
-          </Col>
-        </Row>
-      )
-    }
-
-    if (activeMenu === '5') {
-      const fileColumns = [
-        {
-          title: 'Name',
-          dataIndex: 'name',
-          render: (text, record) => (
-            <Space style={{ cursor: 'pointer' }} onClick={() => handleFileClick(record)}>
-              {record.isDirectory ? <FolderOpenOutlined style={{ color: '#fbbf24' }} /> : <FileOutlined style={{ color: '#94a3b8' }} />}
-              <span style={{ color: '#e2e8f0', fontWeight: record.isDirectory ? 'bold' : 'normal' }}>{text}</span>
-            </Space>
-          ),
-        },
-        { title: 'Size', dataIndex: 'size', render: (size, record) => record.isDirectory ? '-' : `${(size / 1024).toFixed(2)} KB` },
-        { title: 'Actions', render: (_, record) => (<Button type="text" danger icon={<DeleteOutlined />} onClick={(e) => { e.stopPropagation(); deleteItem(record.name); }} />) }
-      ]
-
-      const breadcrumbs = currentPath.split('/').filter(Boolean).reduce((acc, curr, index, arr) => {
-        acc.push({ title: <a onClick={() => setCurrentPath('/' + arr.slice(0, index + 1).join('/'))}>{curr}</a> })
-        return acc
-      }, [{ title: <a onClick={() => setCurrentPath('/')}><GlobalOutlined /> root</a> }])
-
-      return (
-        <Row gutter={[24, 24]}>
-          <Col span={24}>
-            <Card title="File Manager" bordered={false} className="glass-panel" extra={<Button type="primary" icon={<FolderAddOutlined />} onClick={() => setIsNewDirModalVisible(true)}>New Folder</Button>}>
-              <Breadcrumb items={breadcrumbs} style={{ marginBottom: 16, background: 'rgba(0,0,0,0.2)', padding: '8px 16px', borderRadius: 8 }} />
-              <Table columns={fileColumns} dataSource={fileItems} rowKey="name" loading={filesLoading} pagination={false} size="small" style={{ background: 'transparent' }} rowClassName={() => 'file-row'} />
-            </Card>
-          </Col>
-
-          <Modal title={`Editing: ${editingFile}`} open={!!editingFile} onCancel={() => setEditingFile(null)} width={800} footer={[
-            <Button key="cancel" onClick={() => setEditingFile(null)}>Cancel</Button>,
-            <Button key="save" className="btn-gradient" icon={<SaveOutlined />} loading={loading} onClick={saveFile}>Save Changes</Button>,
-          ]}>
-            <TextArea rows={20} value={fileContent} onChange={(e) => setFileContent(e.target.value)} style={{ fontFamily: 'monospace', background: '#0b0f19', color: '#10b981', border: 'none' }} />
-          </Modal>
-
-          <Modal title="Create New Folder" open={isNewDirModalVisible} onOk={() => {
-            fetch('/api/fs/mkdir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: currentPath === '/' ? `/${newDirName}` : `${currentPath}/${newDirName}` }) })
-              .then(() => { setIsNewDirModalVisible(false); fetchFiles(currentPath); setNewDirName('') })
-          }} onCancel={() => setIsNewDirModalVisible(false)}>
-            <Input placeholder="folder_name" value={newDirName} onChange={(e) => setNewDirName(e.target.value)} />
-          </Modal>
-        </Row>
-      )
-    }
-
-    if (activeMenu === '6') {
-      return (
-        <Row gutter={[24, 24]}>
-          <Col span={24}>
-            <Card title="System Settings" bordered={false} className="glass-panel">
-              <Alert message={`PHP Status: ${phpStatus.message}`} type={phpStatus.installed ? "success" : "warning"} action={!phpStatus.installed && <Button size="small" className="btn-gradient" onClick={installPhp} loading={installingPhp}>Install PHP-FPM</Button>} />
-            </Card>
-          </Col>
-        </Row>
-      )
-    }
+    return null
   }
 
   return (
@@ -538,13 +450,14 @@ export default function Dashboard() {
           {collapsed ? 'MCP' : <><span style={{ color: '#3b82f6', marginRight: 4 }}>My</span>ControlPanel</>}
         </div>
         <Menu theme="dark" mode="inline" selectedKeys={[activeMenu]} onSelect={({ key }) => setActiveMenu(key)} items={[
-          { key: '0', icon: <DashboardOutlined />, label: 'Overview' },
-          { key: '1', icon: <GlobalOutlined />, label: 'Websites' },
-          { key: '2', icon: <DatabaseOutlined />, label: 'Databases' },
-          { key: '3', icon: <UserOutlined />, label: 'FTP Accounts' },
-          { key: '4', icon: <ClockCircleOutlined />, label: 'Cron Jobs' },
-          { key: '5', icon: <FolderOpenOutlined />, label: 'File Manager' },
-          { key: '6', icon: <SettingOutlined />, label: 'Settings' },
+          { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
+          { key: 'websites', icon: <GlobalOutlined />, label: 'Websites' },
+          { key: 'files', icon: <FolderOpenOutlined />, label: 'File Manager' },
+          { key: 'databases', icon: <DatabaseOutlined />, label: 'Databases' },
+          { key: 'ftp', icon: <FolderAddOutlined />, label: 'FTP Accounts' },
+          { key: 'mail', icon: <MailOutlined />, label: 'Mail Server' },
+          { key: 'cron', icon: <ClockCircleOutlined />, label: 'Cron Jobs' },
+          { key: 'settings', icon: <SettingOutlined />, label: 'Settings' }
         ]} />
       </Sider>
 

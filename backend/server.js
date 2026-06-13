@@ -10,6 +10,7 @@ const sysinfoCore = require('./core/sysinfo');
 const cronCore = require('./core/cron');
 const ftpCore = require('./core/ftp');
 const appsCore = require('./core/apps');
+const mailCore = require('./core/mail');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -141,6 +142,27 @@ app.get('/api/php/status', async (req, res) => {
 app.post('/api/php/install', async (req, res) => {
     try { res.json({ status: 'success', ...(await phpCore.installPHP()) }); }
     catch (e) { res.status(500).json({ status: 'error', ...e }); }
+});
+
+// --- MAIL API ---
+app.get('/api/mail/status', async (req, res) => {
+    try { res.json({ status: 'success', data: await mailCore.checkMailInstalled() }); }
+    catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+});
+
+app.post('/api/mail/install', async (req, res) => {
+    try { res.json(await mailCore.installMail()); }
+    catch (e) { res.status(500).json(e); }
+});
+
+app.get('/api/mail/accounts', async (req, res) => {
+    try { res.json({ status: 'success', data: await mailCore.getMailAccounts() }); }
+    catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+});
+
+app.post('/api/mail/accounts', async (req, res) => {
+    try { res.json(await mailCore.createMailAccount(req.body.prefix, req.body.domain, req.body.password)); }
+    catch (e) { res.status(500).json(e); }
 });
 
 app.get('/api/fs/list', (req, res) => {

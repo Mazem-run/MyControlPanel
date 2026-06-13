@@ -41,6 +41,14 @@ function initDb() {
             created_at TEXT NOT NULL
         )`);
 
+        // Create mail_accounts table
+        db.run(`CREATE TABLE IF NOT EXISTS mail_accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            domain TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )`);
+
     });
 }
 
