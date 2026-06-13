@@ -18,7 +18,8 @@ import {
   LockOutlined,
   ClockCircleOutlined,
   UserOutlined,
-  SafetyCertificateOutlined
+  SafetyCertificateOutlined,
+  AppstoreAddOutlined
 } from '@ant-design/icons'
 
 const { Header, Sider, Content } = Layout
@@ -44,6 +45,9 @@ export default function Dashboard() {
   const [installingPhp, setInstallingPhp] = useState(false)
   const [installingFtp, setInstallingFtp] = useState(false)
   const [issuingSsl, setIssuingSsl] = useState(false)
+  const [installingWp, setInstallingWp] = useState(false)
+  const [wpModalVisible, setWpModalVisible] = useState(false)
+  const [wpCredentials, setWpCredentials] = useState(null)
 
   // Forms
   const [domainForm] = Form.useForm()
@@ -179,6 +183,24 @@ export default function Dashboard() {
       else { message.error(data.message) }
     } catch (err) { message.error('Network error') } 
     finally { setIssuingSsl(false) }
+  }
+
+  const handleInstallWp = async (domain_name) => {
+    setInstallingWp(true)
+    try {
+      const res = await fetch('/api/domains/install-wp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain_name })
+      })
+      const data = await res.json()
+      if (data.success) { 
+        message.success(data.message)
+        setWpCredentials({ dbName: data.dbName, dbUser: data.dbUser, dbPass: data.dbPass, domain: domain_name })
+        setWpModalVisible(true)
+      } else { message.error(data.message) }
+    } catch (err) { message.error('Network error') } 
+    finally { setInstallingWp(false) }
   }
 
   const handleCreateDatabase = async (values) => {
@@ -335,6 +357,7 @@ export default function Dashboard() {
                 renderItem={(item) => (
                   <List.Item
                     actions={[
+                      <Button size="small" type="primary" icon={<AppstoreAddOutlined />} onClick={() => handleInstallWp(item.domain_name)} loading={installingWp} style={{ background: '#f59e0b', borderColor: '#f59e0b' }}>Install WP</Button>,
                       <Button size="small" type="dashed" icon={<SafetyCertificateOutlined />} onClick={() => handleIssueSSL(item.domain_name)} loading={issuingSsl}>Enable SSL</Button>,
                       <Badge status="success" text="Active" />
                     ]}
@@ -346,6 +369,18 @@ export default function Dashboard() {
                 )}
               />
             </Card>
+
+            <Modal title="WordPress Installed Successfully! 🎉" open={wpModalVisible} onOk={() => setWpModalVisible(false)} onCancel={() => setWpModalVisible(false)} footer={[<Button key="ok" type="primary" onClick={() => setWpModalVisible(false)}>Got it</Button>]}>
+              <div style={{ padding: '10px 0' }}>
+                <p>WordPress has been successfully installed on <b>{wpCredentials?.domain}</b>.</p>
+                <Alert message="Important: Database Credentials" description={<div style={{fontFamily: 'monospace', marginTop: 10}}>
+                    <b>DB Name:</b> {wpCredentials?.dbName}<br/>
+                    <b>DB User:</b> {wpCredentials?.dbUser}<br/>
+                    <b>DB Password:</b> {wpCredentials?.dbPass}
+                  </div>} type="success" showIcon />
+                <p style={{ marginTop: 15 }}>You can now visit <b>http://{wpCredentials?.domain}</b> to complete the famous 5-minute WordPress installation!</p>
+              </div>
+            </Modal>
           </Col>
         </Row>
       )

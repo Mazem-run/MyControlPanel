@@ -9,6 +9,7 @@ const fsCore = require('./core/fs');
 const sysinfoCore = require('./core/sysinfo');
 const cronCore = require('./core/cron');
 const ftpCore = require('./core/ftp');
+const appsCore = require('./core/apps');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -97,6 +98,16 @@ app.post('/api/domains/ssl', async (req, res) => {
     const { domain_name } = req.body;
     try {
         const result = await nginxCore.enableSSL(domain_name);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json(e);
+    }
+});
+
+app.post('/api/domains/install-wp', async (req, res) => {
+    const { domain_name } = req.body;
+    try {
+        const result = await appsCore.installWordPress(domain_name);
         res.json(result);
     } catch (e) {
         res.status(500).json(e);
