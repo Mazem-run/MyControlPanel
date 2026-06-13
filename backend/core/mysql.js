@@ -48,11 +48,11 @@ async function createDatabase(dbName, dbUser, dbPass) {
     }
 
     try {
-        // Connect via socket (typical for root on local Ubuntu)
+        // Connect via Unix socket (allows passwordless root auth for local root user)
         const connection = await mysql.createConnection({
-            host: 'localhost',
+            socketPath: '/var/run/mysqld/mysqld.sock',
             user: 'root',
-            password: '', // Assuming passwordless root auth via unix socket
+            password: '', 
         });
 
         // Prevent SQL injection by validating names (basic alphanumeric check)
